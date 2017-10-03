@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:chicago-alt-fuel="http://www.mulesoft.org/schema/mule/chicago-alt-fuel" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/chicago-alt-fuel http://www.mulesoft.org/schema/mule/chicago-alt-fuel/current/mule-chicago-alt-fuel.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <chicago-alt-fuel:config name="ChicagoAltFuel__Configuration" doc:name="ChicagoAltFuel: Configuration"/>
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <flow name="chicagoaltfueldemoFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/altfuel/{choiceType}/{searchValue}" doc:name="HTTP"/>
+        <logger message="st: #[message.inboundProperties.'http.request.uri']" level="INFO" doc:name="Logger"/>
+        <set-variable variableName="searchValue" value="#[message.inboundProperties.'http.uri.params'.searchValue]" doc:name="Variable"/>
+        <logger message="chtype:#[flowVars.searchValue]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="#[message.inboundProperties.'http.uri.params'.choiceType=='latitude']">
+                <chicago-alt-fuel:find-on-lattitude config-ref="ChicagoAltFuel__Configuration" latitude="#[flowVars.searchValue]" doc:name="ChicagoAltFuel"/>
+            </when>
+            <when expression="#[message.inboundProperties.'http.uri.params'.choiceType=='longitude']">
+                <chicago-alt-fuel:find-on-long config-ref="ChicagoAltFuel__Configuration" longitude="#[flowVars.searchValue]" doc:name="ChicagoAltFuel"/>
+            </when>
+            <when expression="#[message.inboundProperties.'http.uri.params'.choiceType=='zip']">
+                <chicago-alt-fuel:find-on-zip config-ref="ChicagoAltFuel__Configuration" zip="#[flowVars.searchValue]" doc:name="ChicagoAltFuel"/>
+            </when>
+            <when expression="#[message.inboundProperties.'http.uri.params'.choiceType=='fuelTypeCode']">
+                <chicago-alt-fuel:find-on-fuel-type config-ref="ChicagoAltFuel__Configuration" fuel_type_code="#[flowVars.searchValue]" doc:name="ChicagoAltFuel"/>
+            </when>
+            <otherwise>
+                <logger message="invalid choice" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>     
+    </flow>
+</mule>
